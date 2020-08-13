@@ -1,5 +1,7 @@
 service: notes-app-api
 
+custom: ${file(../serverless.common.yml):custom}
+
 # Create an optimized package for our functions
 package:
   individually: true
@@ -12,19 +14,62 @@ plugins:
 # Create our resources with separate CloudFormation templates
 resources:
   # API Gateway Errors
-  - ${file(resources/api-gateway-errors.yml)}
+  # ${file(../resources/api-gateway-errors.yml)}
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+    GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+    NotesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        # Generate a name based on the stage
+        TableName: ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: noteId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: noteId
+            KeyType: RANGE
+        # Set the capacity to auto-scale
+        BillingMode: PAY_PER_REQUEST
+  Outputs:
+    NotesTableArn:
+      Value:
+          Fn::GetAtt:
+          - NotesTable
+          - Arn
+      Export:
+        Name: ${self:custom.stage}-ExtNotesTableArn
 
 provider:
   name: aws
   runtime: nodejs12.x
-  stage: prod
+  stage: dev
   region: us-east-1
 
   # These environment variables are made available to our functions
   # under process.env.
   environment:
     tableName: notes
-    stripeSecretKey: ${env:STRIPE_SECRET_KEY}
 
   # 'iamRoleStatements' defines the permission policy for the Lambda function.
   # In this case Lambda functions are granted with permissions to access DynamoDB.
@@ -97,16 +142,5 @@ functions:
       - http:
           path: notes/{id}
           method: delete
-          cors: true
-          authorizer: aws_iam
-  billing:
-    # Defines an HTTP API endpoint that calls the main function in billing.js
-    # - path: url path is /billing
-    # - method: POST request
-    handler: billing.main
-    events:
-      - http:
-          path: billing
-          method: post
           cors: true
           authorizer: aws_iam
