@@ -6,7 +6,6 @@ custom:
     prod: prod
     dev: dev
   resourcesStage: ${self:custom.resourcesStages.${self:custom.stage}, self:custom.resourcesStages.dev}
-  tableName: ${self:custom.stage}-ext-notes
 
 lambdaPolicyXRay:
   Effect: Allow
