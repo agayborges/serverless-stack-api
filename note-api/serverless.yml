@@ -8,6 +8,7 @@ custom: ${file(../serverless.common.yml):custom}
 package:
   individually: true
 
+
 plugins:
   - serverless-bundle # Package our functions with Webpack
   - serverless-offline
