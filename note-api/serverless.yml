@@ -1,3 +1,5 @@
+org: agayborges
+app: serverless-stack-api
 service: notes-app-api
 
 custom: ${file(../serverless.common.yml):custom}
