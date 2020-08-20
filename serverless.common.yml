@@ -13,3 +13,8 @@ lambdaPolicyXRay:
     - xray:PutTraceSegments
     - xray:PutTelemetryRecords
   Resource: "*"
+
+plugins:
+  - serverless-bundle # Package our functions with Webpack
+  - serverless-offline
+  - serverless-dotenv-plugin
